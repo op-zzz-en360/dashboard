@@ -1,0 +1,21 @@
+
+{
+  "cameras" : [
+    {
+      "name" : "camara_unit_1",
+      "ipaddr" : "192.168.88.11"
+    },
+    { 
+      "name" : "camara_unit_2",
+      "ipaddr" : "192.168.88.12"
+    },
+    { 
+      "name" : "camara_unit_3",
+      "ipaddr" : "192.168.88.13"
+    },
+    { 
+      "name" : "camara_unit_4",
+      "ipaddr" : "192.168.88.14"
+    }
+  ]
+}

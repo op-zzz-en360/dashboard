@@ -1,0 +1,221 @@
+<!doctype html>
+<html>
+<head>
+    <!--<meta http-equiv="refresh" content="5" />-->
+    <title>OPEN360 :: Flask  dashboard</title>
+    <link rel="shortcut icon" href="../static/img/favicon.ico">
+    <style type="text/css">
+        body {
+            font-family     : Calibri;
+            color           : #fff;
+            background-color: darkorange;
+        }
+        textarea {
+          o__verflow        : auto;
+          outline         : none;  
+          resize          : none;
+        }
+        .wrapper {
+            display         : table;
+            width           : 100%;
+            border-spacing  : 0px 0px;
+        }
+        .cell {
+            display         : table-cell;
+            padding         : 0px;
+            text-align      : center;
+            width           : 12%;
+        }
+        .cell img {
+            width           : 100%;
+        }
+        .cell span {
+            font-size       :1.8em;
+        }
+        .refresh {
+            text-align      : left;
+        }
+        .promo {
+            text-align      : center;
+        }
+        .copy {
+            font-size       : 0.7em;
+            float           : right;
+            vertical-align  : bottom;
+        }
+        .copy a {
+            color: #fff;
+                 }
+
+
+    </style>
+    
+    <script type="text/javascript" src="/static/js/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="/static/js/socket.io.min.js"></script>
+    <script type="text/javascript" src="/static/js/angular.min.js"></script>
+    <script src="/static/js/script.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function(){
+            var log = $('#log');
+            namespace = '/test'; // change to an empty string to use the global namespace
+            // the socket.io documentation recommends sending an explicit package upon connection
+            // this is specially important when using the global namespace
+            var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+            // event handler for server sent data
+            // the data is displayed in the "Received" section of the page
+            socket.on('my response', function(msg) {
+                log.append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
+                log.scrollTop(log[0].scrollHeight);
+            });
+            
+            //event handler for dwnload data
+            
+            socket.on('download_data', function(msg) {
+                $("#download").attr("href", "/static/stuff.tar.gz");
+                $("#download").text('download stuff');
+            });
+            
+            //event handler for refreshing images
+            socket.on('image_data', function(msg) {
+                var images = msg.data.split("|");
+                $("#camera1").attr("src", "/static/cam_images/" + images[0]);
+                $("#camera2").attr("src", "/static/cam_images/" + images[1]);
+                $("#camera3").attr("src", "/static/cam_images/" + images[2]);
+                $("#camera4").attr("src", "/static/cam_images/" + images[3]);
+                $("#camera5").attr("src", "/static/cam_images/" + images[4]);
+                $("#camera6").attr("src", "/static/cam_images/" + images[5]);
+                $("#camera7").attr("src", "/static/cam_images/" + images[6]);
+                $("#camera8").attr("src", "/static/cam_images/" + images[7]);
+            });
+            // event handler for new connections
+            socket.on('connect', function() {
+                socket.emit('my event', {data: 'I\'m connected!'});
+            });
+            // handlers for the different forms in the page
+            // these send data to the server in a variety of ways
+            $('form#capture').submit(function(event) {
+                socket.emit('capture_event', {data: $('#capture_count').val()});
+                return false;
+            });
+            
+            $('form#download_images').submit(function(event) {
+                socket.emit('download_images', {data: ""});
+                return false;
+            });
+            
+            $('form#emit').submit(function(event) {
+                socket.emit('my event', {data: $('#emit_data').val()});
+                return false;
+            });
+            
+            $('form#disconnect').submit(function(event) {
+                socket.emit('disconnect request');
+                return false;
+            });
+        });
+        
+        // var xmlhttp = new XMLHttpRequest();
+        // var url = "/config";
+
+        // xmlhttp.onreadystatechange = function() {
+        //     if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+        //         var myArr = JSON.parse(xmlhttp.responseText);
+        //         //myFunction(myArr);
+        //         console.log(myArr);    
+        // }
+        // };
+        // xmlhttp.open("GET", url, true);
+        // xmlhttp.send();
+    </script>
+</head>
+<body  ng-app="httpExample">
+
+<div class="refresh">
+    <A HREF="javascript:history.go(0)">MANUAL REFRESH</A>
+</div>
+<h1>
+    OPEN360 :: DASHBOARD
+</h1>
+
+<div ng-controller="FetchController">
+  <table>
+  <tr>
+    <th>id</th>
+    <th>Name</th> 
+    <th>IP</th>
+    <th>remove</th>
+  </tr>
+  <tr ng-repeat="camera in data.cameras">
+    <td>{[{ $index + 1 }]}</td>
+    <td>{[{camera.name}]}</td>
+    <td><input ng-model="camera.ipaddr" type="text"></td>
+    <td><form ng-submit="delCamera($index)"><input ng-model="$index" type="submit" value="DEL"></form></td>
+  </tr>
+</table>
+    <form ng-submit="addCamera()">
+    <input type="text" ng-model="newCamera.name"  size="10"
+            placeholder="name">
+    <input type="text" ng-model="newCamera.ipaddr"  size="20"
+            placeholder="IP">
+    <input class="btn-primary" type="submit" value="add">
+    </form>
+    <input ng-click="post_config()" type="submit" value="SAVE CONFIG">
+  <pre>http status: {[{status}]}</pre>
+</div>
+
+<form id="capture" method="POST" action='#'>
+    <input type="text" name="capture_count" id="capture_count" placeholder="Capture count"> 
+    <input type="submit" value="RUN CAPTURE">
+</form>
+<br>
+
+<form id="download_images" method="POST" action='#'> 
+    <input type="submit" value="DOWNLOAD DATA">
+    <a id="download" href=""></a>
+</form>
+<br>
+
+<div class="wrapper">
+    <div class="cell" ><img id="camera1" src="/static/cam_images/{{im1}}" /><br /><img src="../static/img/01.png" /><span>01</span></div>
+    <div class="cell" ><img id="camera2" src="/static/cam_images/{{im5}}" /><br /><img src="../static/img/02.png" /><span>02</span></div>
+    <div class="cell" ><img id="camera3" src="/static/cam_images/{{im2}}" /><br /><img src="../static/img/03.png" /><br><span>03</span></div>
+    <div class="cell" ><img id="camera4" src="/static/cam_images/{{im6}}" /><br /><img src="../static/img/04.png" /><br><span>04</span></div>
+    <div class="cell" ><img id="camera5" src="/static/cam_images/{{im3}}" /><br /><img src="../static/img/05.png" /><br><span>05</span></div>
+    <div class="cell" ><img id="camera6" src="/static/cam_images/{{im7}}" /><br /><img src="../static/img/06.png" /><br><span>06</span></div>
+    <div class="cell" ><img id="camera7" src="/static/cam_images/{{im4}}" /><br /><img src="../static/img/07.png" /><br><span>07</span></div>
+    <div class="cell" ><img id="camera8" src="/static/cam_images/{{im8}}" /><br /><img src="../static/img/08.png" /><br><span>08</span></div>
+</div>
+
+<!--
+<div class="promo">
+    <iframe src="https://docs.google.com/presentation/d/1eB3Dm9lg_ob2gZQfVp-81bGgwnqo8w2Ot6XiyWGGL2g/embed?start=false&loop=true&delayms=3000" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+</div>
+-->
+
+<h2>Send:</h2>
+    <form id="emit" method="POST" action='#'>
+        <input type="text" name="emit_data" id="emit_data" placeholder="Message">
+        <input type="submit" value="Echo">
+    </form>
+    <form id="disconnect" method="POST" action="#">
+        <input type="submit" value="Disconnect">
+    </form>
+    <h2>Receive:</h2>
+    <textarea id="log" rows="10" cols="100" name="log" placeholder="log камер"></textarea>
+
+
+<div class="copy">
+    <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+    (GPL) Працює на <a href="http://open360.pro" target="_blank">OPEN360.PRO</a><br />
+
+    <!--// DATA TIME //-->
+    <script language="javascript">
+        var today = new Date();
+        document.write(today);
+    </script>
+    <!--// DATA TIME - END //-->
+</div>
+
+
+</body>
+</html>
